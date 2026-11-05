@@ -1,4 +1,5 @@
-import { getStats, getWords, levelFromXp, xpForLevel, todayXp } from "../store.js";
+import { getStats, getWords, levelFromXp, xpForLevel, todayXp, getAnswerTotals, getSettings, updateSettings } from "../store.js";
+import { enableReminders, disableReminders, supported } from "../notifications.js";
 import { BADGES } from "../badges.js";
 
 export function renderDashboard(root) {
@@ -10,6 +11,8 @@ export function renderDashboard(root) {
   const levelPct = ((s.xp - lo) / (hi - lo)) * 100;
   const goalPct = Math.min(100, (todayXp() / s.dailyGoal) * 100);
   const mastered = words.filter((w) => w.mastery >= 5).length;
+  const totals = getAnswerTotals();
+  const settings = getSettings();
   const due = words.filter((w) => w.nextReview <= Date.now()).length;
 
   root.innerHTML = `
@@ -20,6 +23,7 @@ export function renderDashboard(root) {
       <div class="card stat"><div class="value">⭐ ${level}</div><div class="label">Level</div></div>
       <div class="card stat"><div class="value">📖 ${words.length}</div><div class="label">Words saved</div></div>
       <div class="card stat"><div class="value">🧠 ${mastered}</div><div class="label">Mastered</div></div>
+      <div class="card stat"><div class="value">✅ ${totals.correct}<small class="muted"> / ${totals.total}</small></div><div class="label">Correct answers${totals.total ? ` (${totals.accuracy}%)` : ""}</div></div>
     </div>
 
     <div class="grid" style="grid-template-columns: 1fr 1fr; margin-top: 1rem;">
@@ -46,6 +50,17 @@ export function renderDashboard(root) {
     </div>
 
     <div class="card stack" style="margin-top: 1rem;">
+      <strong>Daily reminder</strong>
+      ${supported() ? `
+        <div class="row">
+          <label class="row"><input type="checkbox" id="reminder-on" ${settings.reminderEnabled ? "checked" : ""} /> Remind me to practice</label>
+          <input type="time" id="reminder-time" value="${settings.reminderTime}" style="width:auto" />
+        </div>
+        <span class="muted">Notifications appear while this site is open in a browser tab.</span>`
+      : `<span class="muted">This browser doesn't support notifications.</span>`}
+    </div>
+
+    <div class="card stack" style="margin-top: 1rem;">
       <strong>Badges</strong>
       <div class="badges">
         ${BADGES.map(
@@ -54,4 +69,12 @@ export function renderDashboard(root) {
       </div>
     </div>
   `;
+
+  const on = root.querySelector("#reminder-on");
+  if (on) {
+    on.onchange = async () => {
+      on.checked = on.checked ? await enableReminders() : (disableReminders(), false);
+    };
+    root.querySelector("#reminder-time").onchange = (e) => updateSettings({ reminderTime: e.target.value, lastReminded: null });
+  }
 }

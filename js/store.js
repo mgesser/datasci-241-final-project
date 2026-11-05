@@ -7,6 +7,13 @@ const defaultState = () => ({
   texts: [],
   words: [],
   answers: [], // quiz answer log, for analytics
+  settings: {
+    reminderEnabled: false,
+    reminderTime: "19:00",
+    lastReminded: null, // YYYY-MM-DD of the last reminder sent
+    leaderboardJoined: false,
+    leaderboardNickname: "",
+  },
   stats: {
     xp: 0,
     streak: 0,
@@ -34,7 +41,9 @@ function save() {
 }
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-const today = () => new Date().toISOString().slice(0, 10);
+// Local calendar date (YYYY-MM-DD). toISOString() is UTC and would roll the day over mid-evening.
+const dateKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+export const today = () => dateKey(new Date());
 
 // ---------- Texts ----------
 export const getTexts = () => state.texts;
@@ -109,11 +118,35 @@ export function recordAnswer(wordId, correct, ms) {
   save();
 }
 
+// Lifetime totals, derived from the answer log.
+export function getAnswerTotals() {
+  const total = state.answers.length;
+  const correct = state.answers.filter((a) => a.correct).length;
+  return { total, correct, accuracy: total ? Math.round((correct / total) * 100) : 0 };
+}
+
+export const getSettings = () => state.settings;
+export function updateSettings(patch) {
+  Object.assign(state.settings, patch);
+  save();
+}
+
+// The streak only counts if you were active today or yesterday.
+export function currentStreak() {
+  const s = state.stats;
+  if (!s.lastActiveDate) return 0;
+  const y = new Date();
+  y.setDate(y.getDate() - 1);
+  return s.lastActiveDate === today() || s.lastActiveDate === dateKey(y) ? s.streak : 0;
+}
+
 export function addXp(amount) {
   const s = state.stats;
   const d = today();
   if (s.lastActiveDate !== d) {
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const y = new Date();
+    y.setDate(y.getDate() - 1);
+    const yesterday = dateKey(y);
     s.streak = s.lastActiveDate === yesterday ? s.streak + 1 : 1;
     s.lastActiveDate = d;
     s.todayXp = 0;

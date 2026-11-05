@@ -22,9 +22,27 @@ css/styles.css      Styles
 js/app.js           Router, HUD, shared helpers
 js/store.js         localStorage persistence + gamification logic
 js/badges.js        Badge definitions
-js/views/           dashboard, reader, vocab, quiz
+js/views/           dashboard, reader, vocab, quiz, leaderboard
+js/leaderboard.js   Supabase client for the leaderboard
+js/notifications.js Daily practice reminders
+js/config.js        Supabase URL + anon key (empty = leaderboard off)
+supabase/schema.sql Database table + security policies
 docs/OUTLINE.md     Project outline
 ```
+
+## Leaderboard setup (Supabase)
+
+The leaderboard is optional. Without a Supabase project the rest of the app works and the
+Leaderboard page just says it isn't set up.
+
+1. Create a free project at [supabase.com](https://supabase.com).
+2. **SQL Editor** → New query → paste [supabase/schema.sql](supabase/schema.sql) → Run.
+3. **Authentication → Sign In / Providers** → enable **Allow anonymous sign-ins**.
+4. **Project Settings → API**: copy the Project URL and the `anon` public key into
+   [js/config.js](js/config.js). (The anon key is meant to be public. Never use the `service_role` key.)
+
+Players join with a public nickname and an anonymous login (no email or password). Scores are
+reported by the browser, so the board is trust-based: fine for a class project, not for prizes.
 
 ## Deploy
 

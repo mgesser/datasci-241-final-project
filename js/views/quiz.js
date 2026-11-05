@@ -16,7 +16,7 @@ function buildSession() {
   const pool = [...words].sort((a, b) => (a.nextReview - b.nextReview) || (a.mastery - b.mastery));
   const picked = shuffle(pool.slice(0, SESSION_SIZE));
   const questions = picked.map((w) => makeQuestion(w, words));
-  return { questions, i: 0, hearts: HEARTS, combo: 0, xp: 0, correct: 0, answered: false, start: 0 };
+  return { questions, i: 0, hearts: HEARTS, combo: 0, xp: 0, correct: 0, answeredCount: 0, answered: false, start: 0 };
 }
 
 function makeQuestion(word, all) {
@@ -111,6 +111,7 @@ function submit(root, value, btn) {
   const s = session;
   if (s.answered) return;
   s.answered = true;
+  s.answeredCount++;
   const q = s.questions[s.i];
   const correct = normalize(value) === normalize(q.answer);
   recordAnswer(q.word.id, correct, Math.round(performance.now() - s.start));
@@ -157,7 +158,8 @@ function renderSummary(root) {
       <h2>${s.hearts <= 0 ? "Out of hearts 💔" : perfect ? "Perfect! 💎" : "Lesson complete! 🎉"}</h2>
       <div class="grid grid-4" style="max-width:500px; margin: 1.5rem auto;">
         <div class="stat"><div class="value">⚡ ${s.xp}</div><div class="label">XP earned</div></div>
-        <div class="stat"><div class="value">🎯 ${Math.round((s.correct / total) * 100)}%</div><div class="label">Accuracy</div></div>
+        <div class="stat"><div class="value">✅ ${s.correct} / ${s.answeredCount}</div><div class="label">Correct</div></div>
+        <div class="stat"><div class="value">🎯 ${s.answeredCount ? Math.round((s.correct / s.answeredCount) * 100) : 0}%</div><div class="label">Accuracy</div></div>
       </div>
       <div class="row" style="justify-content:center">
         <a class="btn secondary" href="#/">Dashboard</a>

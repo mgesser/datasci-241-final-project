@@ -3,12 +3,16 @@ import { renderDashboard } from "./views/dashboard.js";
 import { renderReader } from "./views/reader.js";
 import { renderVocab } from "./views/vocab.js";
 import { renderQuiz } from "./views/quiz.js";
+import { renderLeaderboard } from "./views/leaderboard.js";
+import { checkReminder } from "./notifications.js";
+import { startLeaderboardSync } from "./leaderboard.js";
 
 const routes = {
   "/": renderDashboard,
   "/reader": renderReader,
   "/vocab": renderVocab,
   "/quiz": renderQuiz,
+  "/leaderboard": renderLeaderboard,
 };
 
 const app = document.getElementById("app");
@@ -36,3 +40,7 @@ window.addEventListener("hashchange", router);
 window.addEventListener("store:change", renderHud);
 renderHud();
 router();
+
+startLeaderboardSync();
+checkReminder();
+setInterval(checkReminder, 60 * 1000);
